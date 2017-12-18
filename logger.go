@@ -1,7 +1,6 @@
 package logger
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -25,6 +24,7 @@ type Logger struct {
 
 var (
 	currentTime = time.Now()
+	megaByte    = 1024 * 1024
 )
 
 //Write implements the io.Writer. Write checks if the dataToWrite is greater than the max filesize of logger.
@@ -41,7 +41,22 @@ func (l *Logger) Write(data []byte) (int, error) {
 	return bytesWritten, err
 }
 
-//Close implements Closer
+//Close implements io.Closer and closes the current log file
 func (l *Logger) Close() error {
-	return errors.New("Not Implemented")
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return l.close()
+}
+
+//close is an internal method. close closes the file if it is open
+func (l *Logger) close() error {
+	if l.file == nil {
+		return nil
+	}
+	err := l.file.Close()
+	if err != nil {
+		return err
+	}
+	l.file = nil
+	return err
 }
