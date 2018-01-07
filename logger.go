@@ -21,27 +21,62 @@ type Logger struct {
 	DailyLog bool `json:"dailylog"`
 	//PushToS3 = true pushes the archived log file to S3 everyday
 	PushToS3 bool `json:"pushtos3"`
+
+	file *os.File
 }
 
 //Logger implements all the methods of io.WriterCloser
 var _ io.WriteCloser = (*Logger)(nil)
 
 //Write writes the log to l.FileName
-func (l *Logger) Write([]byte) (int, error) {
-	//Check if the logFile esists
+func (l *Logger) Write(data []byte) (int, error) {
+	//Check if the logFile exists
 	if _, err := os.Stat(l.FileName); os.IsNotExist(err) {
 		//File does not exist. Create a new File
-		_, err := os.Create(l.FileName)
+		file, err := os.Create(l.FileName)
 		if err != nil {
 			//-1 from the Write Method indicates error
 			return -1, err
 		}
+		//Assign the file object to the Logger File
+		l.file = file
+
+	} else {
+		//file exists.
+		//opent the file in a Writeonly or append mode and the permissions are set to write.
+		l.file, err = os.OpenFile(l.FileName, os.O_WRONLY|os.O_APPEND, 444)
+		if err != nil {
+			return -1, err
+		}
 	}
 
-	return 0, errors.New("Partially Implemented")
+	//Write data to the file
+	n, err := l.file.Write(data)
+	//close the file
+	err = l.Close()
+	if err != nil {
+		return -1, err
+	}
+
+	return n, err
 }
 
 //Close closes the log file which is opened to write
 func (l *Logger) Close() error {
-	return errors.New("Not Implemented")
+	if l.file != nil {
+		return close(l)
+	}
+
+	return errors.New("File is already nil")
+}
+
+//close calls the *file.Close() method.
+func close(l *Logger) error {
+	if l.file == nil {
+		return errors.New("Invalid File")
+	}
+	var err error
+	err = l.file.Close()
+	l.file = nil
+	return err
 }
