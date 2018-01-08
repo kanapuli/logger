@@ -11,12 +11,12 @@ func TestWriteNewLog(t *testing.T) {
 	//remove file if exists
 	os.Remove("Errorlog.log")
 	l := logger.Logger{
-		FileName:      "Errorlog.log", //file path is pwd
+		FileName:      "Errorlog.log", //file path is pwd. Filename without extension
 		MaxSize:       200,
 		DailyLog:      true,
 		PushToS3:      false,
 		ShouldArchive: false,
-		TimeFormat:    "utc",
+		TimeFormat:    "local",
 	}
 	n, err := l.Write([]byte("10 bytes\n"))
 	if err != nil {
