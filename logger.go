@@ -40,7 +40,20 @@ var _ io.WriteCloser = (*Logger)(nil)
 
 //Close closes the logfile
 func (logger *Logger) Close() error {
-	return nil
+	err := logger.close()
+	if err != nil {
+		log.Printf("Error closing log file: %v", err)
+
+	}
+}
+
+func (logger *Logger) close() error {
+	if logger.file != nil {
+		logger.mu.Lock()
+		logger.file.Close()
+		logger.mu.Unlock()
+
+	}
 }
 
 //Write writes to the log file
