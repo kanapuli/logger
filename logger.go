@@ -45,15 +45,19 @@ func (logger *Logger) Close() error {
 		log.Printf("Error closing log file: %v", err)
 
 	}
+	return err
 }
 
 func (logger *Logger) close() error {
 	if logger.file != nil {
 		logger.mu.Lock()
-		logger.file.Close()
+		err := logger.file.Close()
 		logger.mu.Unlock()
-
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 //Write writes to the log file
@@ -65,8 +69,9 @@ func (logger *Logger) Write(data []byte) (int, error) {
 }
 
 //Log is the external interface to get log data
-func Log(ctx context.Context, level LogLevel, data interface{}) error {
-	return nil
+func (logger *Logger) Log(ctx context.Context, level LogLevel, data interface{}) error {
+	_, err := logger.Write([]byte(data.(string)))
+	return err
 }
 
 func (logger *Logger) createLogFile() {
