@@ -42,7 +42,7 @@ var _ io.WriteCloser = (*Logger)(nil)
 func (logger *Logger) Close() error {
 	err := logger.close()
 	if err != nil {
-		log.Printf("Error closing log file: %v", err)
+		log.Printf("error closing log file: %v", err)
 
 	}
 	return err
@@ -65,7 +65,21 @@ func (logger *Logger) Write(data []byte) (int, error) {
 	if logger.file == nil {
 		logger.createLogFile()
 	}
-	return 0, nil
+	file, err := os.OpenFile(logger.Filepath+logger.Filename, os.O_APPEND|os.O_WRONLY, 0600)
+	if err != nil {
+		log.Printf("error in opening file to write: %v", err)
+		return 0, err
+	}
+	bytesWritten, err := file.Write(data)
+	if err != nil {
+		log.Printf("error writing to log file: %v", err)
+		return 0, err
+	}
+	_, _ = file.Write([]byte("\n"))
+
+	//Close the file once the log is written
+	defer logger.Close()
+	return bytesWritten, nil
 }
 
 //Log is the external interface to get log data
@@ -80,7 +94,7 @@ func (logger *Logger) createLogFile() {
 	if os.IsNotExist(err) {
 		file, err := os.Create(path)
 		if err != nil {
-			log.Fatalf("Error in creating log file: %v", err)
+			log.Fatalf("error in creating log file: %v", err)
 		}
 		logger.file = file
 	}
